@@ -1,9 +1,12 @@
-pyenv: cannot rehash: /Users/aldo_snz/.pyenv/shims isn't writable
 # Mailtor
 
 Librería ligera de validación sintáctica y sugerencia **opcional** de dominios de email. Cero dependencias de ejecución, sin red, DNS, telemetría ni servicios externos. No verifica si una casilla existe, recibe mensajes o pertenece a alguien.
 
 > Estado: repositorio listo para desarrollo e integración. `private: true` impide publicar accidentalmente en npm; para una distribución futura habría que decidir el canal y quitar esa marca.
+
+## Playground web
+
+Abrí **[Mailtor Playground](https://aldo-snz.github.io/mailtor/)**. Se publica desde `playground/` mediante GitHub Actions al actualizar el código del sitio en `main`. No requiere cuenta ni envía el email ingresado a un servidor.
 
 ## Instalación local
 
