@@ -1,0 +1,15 @@
+import test from 'node:test';
+import assert from 'node:assert/strict';
+import {validateEmail} from '../dist/validate.js';
+import {suggestEmail} from '../dist/suggest.js';
+import {analyzeEmail} from '../dist/analyze.js';
+import validator from 'validator';
+import Mailcheck from 'mailcheck';
+const valid = ['ana@gmail.com','Ana.Perez+promo@empresa.com','a@x.co','x!#$%&\'*+-/=?^_`{|}~@example.com'];
+const invalid = ['', 'ana', '@example.com', 'ana@', 'a@@example.com', '.ana@example.com', 'ana..x@example.com', 'ana@-example.com', 'ana@example..com', 'ana @example.com', 'ana@example.c'];
+test('formatos válidos e inválidos',()=>{for(const x of valid) assert.equal(validateEmail(x).valid,true,x);for(const x of invalid) assert.equal(validateEmail(x).valid,false,x);});
+test('dominios propios y alias intactos',()=>{assert.equal(validateEmail('A.B+tag@miempresa.com').valid,true);assert.equal(suggestEmail('A.B+tag@gmial.com')?.address,'A.B+tag@gmail.com');});
+test('sugerencia opcional, TLD prudente y empate',()=>{assert.equal(suggestEmail('ana@gmial.com')?.domain,'gmail.com');assert.equal(suggestEmail('ana@empresa.com'),null);assert.equal(suggestEmail('ana@empresa.co',{domains:['empresa.com']}),null);assert.equal(suggestEmail('ana@abc.com',{domains:['abd.com','abe.com']}),null);assert.equal(suggestEmail('ana@gmial.com',{domains:['gmail.com'],maxDistance:1})?.domain,'gmail.com');});
+test('límites y casos especiales',()=>{assert.ok(validateEmail('x'.repeat(1025)).errors.includes('TOO_LONG'));assert.ok(validateEmail('x'.repeat(65)+'@example.com').errors.includes('LOCAL_TOO_LONG'));assert.ok(validateEmail('a@'+'x'.repeat(64)+'.com').errors.includes('DOMAIN_LABEL_TOO_LONG'));assert.ok(validateEmail('"a b"@example.com').errors.includes('UNSUPPORTED_QUOTED'));assert.ok(validateEmail('josé@example.com').errors.includes('UNSUPPORTED_UNICODE_LOCAL'));assert.equal(validateEmail('a@bücher.de',{allowUnicodeDomain:true}).valid,true);assert.ok(validateEmail('a@bücher.de',{allowUnicodeDomain:true}).warnings.includes('IDN_DOMAIN'));assert.equal(validateEmail('a@intranet',{requireTld:false}).valid,true);});
+test('análisis separa errores y sugerencia',()=>{const bad=analyzeEmail('ana@gmial..com');assert.equal(bad.suggestion,null);assert.ok(bad.errors.length);const good=analyzeEmail('ana@gmial.com');assert.equal(good.valid,true);assert.ok(good.suggestion);});
+test('comparación representativa con referencias fijadas',()=>{for(const x of ['ana@gmail.com','a@empresa.com','a@@example.com','ana@example..com']) assert.equal(validateEmail(x).valid,validator.isEmail(x),x);let reference;Mailcheck.run({email:'ana@gmial.com',suggested:value=>{reference=value},empty:()=>{}});assert.equal(reference?.full,'ana@gmail.com');assert.equal(suggestEmail('ana@gmial.com')?.address,reference.full);});

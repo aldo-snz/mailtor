@@ -1,0 +1,53 @@
+{
+  "name": "mailtor",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "license": "MIT",
+  "sideEffects": false,
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.js"
+    },
+    "./validate": {
+      "types": "./dist/validate.d.ts",
+      "import": "./dist/validate.js"
+    },
+    "./suggest": {
+      "types": "./dist/suggest.d.ts",
+      "import": "./dist/suggest.js"
+    },
+    "./analyze": {
+      "types": "./dist/analyze.d.ts",
+      "import": "./dist/analyze.js"
+    },
+    "./inline": {
+      "types": "./dist/inline.d.ts",
+      "import": "./dist/inline.js"
+    },
+    "./browser": "./dist/mailtor.browser.js"
+  },
+  "files": [
+    "dist",
+    "README.md",
+    "LICENSE",
+    "NOTICE.md"
+  ],
+  "scripts": {
+    "build": "node scripts/build.mjs",
+    "typecheck": "tsc --noEmit",
+    "test": "npm run build && node --test test/*.test.mjs",
+    "test:browser": "playwright test",
+    "size": "node scripts/size.mjs",
+    "bench": "node scripts/bench.mjs",
+    "playground": "node scripts/serve.mjs"
+  },
+  "devDependencies": {
+    "@playwright/test": "1.56.1",
+    "esbuild": "0.25.12",
+    "mailcheck": "1.1.1",
+    "typescript": "5.9.3",
+    "validator": "13.15.35"
+  }
+}

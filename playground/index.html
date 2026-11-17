@@ -1,0 +1,16 @@
+<!doctype html><html lang="es"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Mailtor · Playground</title><link rel="stylesheet" href="style.css"></head><body>
+<main class="shell"><header><p class="eyebrow">MAILTOR / PLAYGROUND</p><h1>Emails claros, sin falsas promesas.</h1><p>Probá la validación de formato y las sugerencias de dominio en tu navegador. Nada se envía a un servidor.</p></header>
+<div class="grid"><section class="card"><h2>Probá un email</h2><form id="email-form" novalidate><label for="email">Dirección de email</label><input id="email" type="text" autocomplete="email" inputmode="email" spellcheck="false" placeholder="nombre@dominio.com"><button class="primary" type="submit">Validar</button></form><p class="hint">La sugerencia es opcional. Tu texto anterior a @ se conserva.</p><div class="examples" aria-label="Ejemplos"><button data-example="ana@gmail.com">Válido</button><button data-example="anasin-arroba.com">Sin @</button><button data-example="ana@gmial.com">Dominio mal escrito</button><button data-example="ana@miempresa.com">Dominio propio</button><button data-example="Ana.Perez+promo@gmial.com">Alias +tag</button><button data-example="ana@abc.com">Ambiguo</button></div></section>
+<section class="card"><h2>Configuración</h2><label for="mode">Momento de validación</label><select id="mode"><option value="blur">Al salir del campo (recomendado)</option><option value="submit">Al enviar</option><option value="input">Al escribir</option></select><label for="domains">Dominios de referencia, uno por línea</label><textarea id="domains" rows="7">gmail.com
+googlemail.com
+hotmail.com
+outlook.com
+yahoo.com
+icloud.com
+live.com
+aol.com
+proton.me</textarea><div class="row"><label for="distance">Distancia máxima</label><select id="distance"><option value="1">1</option><option value="2" selected>2</option></select></div><label class="check"><input id="unicode" type="checkbox"> Permitir dominios Unicode</label><label class="check"><input id="tld" type="checkbox" checked> Exigir sufijo de dominio</label><p class="hint">Para el ejemplo ambiguo, agregá <code>abd.com</code> y <code>abe.com</code>, y probá <code>abc.com</code>.</p></section>
+<section class="card"><h2>Resultado de la API</h2><pre id="json" aria-live="polite">Escribí un email para ver el resultado.</pre></section>
+<section class="card"><h2>Integración</h2><pre id="code"></pre><button id="copy" type="button">Copiar código</button><span id="copy-status" role="status"></span></section></div>
+<section class="card batch"><h2>Lista de emails</h2><label for="list">Pegá un email por línea</label><textarea id="list" rows="6" placeholder="ana@gmail.com&#10;ana@gmial.com"></textarea><button id="run-list" class="primary" type="button">Analizar lista</button><div class="table-wrap"><table><thead><tr><th>Email</th><th>Formato</th><th>Errores</th><th>Sugerencia</th></tr></thead><tbody id="results"></tbody></table></div></section>
+<footer>Validar formato no verifica existencia, recepción ni titularidad de una casilla.</footer></main><script type="module" src="app.js"></script></body></html>

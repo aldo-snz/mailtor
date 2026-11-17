@@ -1,0 +1,8 @@
+# Decisiones y referencias
+
+Consultado el 17 de noviembre de 2026: [validator.js](https://github.com/validatorjs/validator.js), su [implementación `isEmail`](https://github.com/validatorjs/validator.js/blob/master/src/lib/isEmail.js), [pruebas](https://github.com/validatorjs/validator.js/tree/master/test), [licencia MIT](https://github.com/validatorjs/validator.js/blob/master/LICENSE); [Mailcheck](https://github.com/mailcheck/mailcheck), su [implementación](https://github.com/mailcheck/mailcheck/blob/master/src/mailcheck.js), [specs](https://github.com/mailcheck/mailcheck/tree/master/spec), [licencia MIT](https://github.com/mailcheck/mailcheck/blob/master/LICENSE).
+
+- De validator.js se adoptó la **idea** de validar límites por bytes, separar reglas de parte local y dominio y no asumir que un dominio de proveedor sea requisito. Mailtor implementa reglas nuevas y más estrechas: sin nombre visible, comillas, literales IP ni local Unicode. La referencia admite configuraciones más amplias; por ello no afirmamos equivalencia.
+- De Mailcheck se adoptó la **idea** de comparar dominios configurables y devolver una sugerencia no destructiva. Mailtor usa una distancia Damerau-Levenshtein acotada y se abstiene ante empates o cambio de TLD. Mailcheck usa su propia selección y listas. Las comparaciones de pruebas cubren solo ejemplos representativos.
+- No se copió código fuente literal de ninguno. Ambos avisos MIT se conservan en `NOTICE.md` por claridad de atribución. Las dependencias fijadas se usan solo para pruebas y benchmark.
+- No hay consultas de red en ejecución. La sugerencia nunca confirma existencia de una casilla. El DOM queda en un módulo aparte.
