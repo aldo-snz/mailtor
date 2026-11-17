@@ -6,7 +6,7 @@ Entorno: macOS arm64, Apple M4, Node v25.2.1. Comandos: `npm run size` y `npm ru
 |---|---:|---:|
 | `validate` | 1.634 B | 789 B |
 | `suggest` (incluye validación) | 2.745 B | 1.278 B |
-| `inline` (incluye análisis) | 5.542 B | 2.305 B |
+| `inline` (incluye análisis) | 5.554 B | 2.309 B |
 | `all` (API sin adaptador) | 2.858 B | 1.323 B |
 
 El bundle inline autocontenido queda por debajo de la meta inicial de 10 kB gzip. Sumar las filas cuenta código compartido varias veces.
