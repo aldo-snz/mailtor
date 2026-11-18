@@ -34,7 +34,15 @@ suggestEmail('Ana.Perez+tag@gmial.com');
 analyzeEmail('ana@gmial.com'); // validación + sugerencia
 ```
 
-`validateEmail(email, {allowUnicodeDomain?: boolean, requireTld?: boolean})` devuelve `valid`, códigos `errors` y `warnings`, y partes `local` y `domain`. `suggestEmail(email, {domains?: string[], maxDistance?: 1|2, ...})` devuelve una sugerencia o `null`. `analyzeEmail` reúne ambos resultados. La lista configurable **solo** define destinos de sugerencia; cualquier dominio propio puede ser sintácticamente válido. La lista se limita a 500 entradas; los candidatos duplicados no crean un empate. La corrección exige el mismo sufijo final y un ganador único a la menor distancia. No hay puntuación de confianza.
+`validateEmail(email, {allowUnicodeDomain?: boolean, requireTld?: boolean})` devuelve `valid`, códigos `errors` y `warnings`, y partes `local` y `domain`. `suggestEmail(email, {domains?: string[], protectedDomains?: string[], corrections?: Record<string,string>, maxDistance?: 1|2, ...})` devuelve una sugerencia o `null`. `analyzeEmail` reúne ambos resultados. `domains` define destinos de sugerencia, no una lista de emails permitidos. `protectedDomains` evita sugerir cambios para dominios legítimos adicionales; `mail.com` y los destinos predeterminados ya están protegidos. Las `corrections` son mapeos exactos y explícitos, con claves y valores de dominio en minúsculas, para casos revisados como `hmail.com` → `hotmail.com` o un cambio de sufijo. Los dominios protegidos y los destinos configurados prevalecen sobre los mapeos. La lista se limita a 500 entradas; los candidatos duplicados no crean un empate. La sugerencia por similitud exige el mismo sufijo final, un único destino dentro de la distancia máxima y al menos cuatro caracteres en la primera etiqueta del dominio original. No hay puntuación de confianza.
+
+```ts
+suggestEmail('Ana+tag@hmail.com', {
+  corrections: {'hmail.com': 'hotmail.com'}
+}); // Ana+tag@hotmail.com, solo como sugerencia
+```
+
+Antes de enviar una dirección a IPQS, mostrá la sugerencia y dejá que la persona la acepte o descarte. IPQS debe evaluar la **dirección final enviada**, incluso si se aceptó una sugerencia: Mailtor no comprueba existencia ni entregabilidad. La guía de integración y medición está en [docs/INTEGRACION_IPQS.md](docs/INTEGRACION_IPQS.md).
 
 ### Reglas y límites
 
@@ -56,7 +64,7 @@ const cleanup = attachEmailValidation(document.querySelector('#email')!, {
 // Al desmontar: cleanup();
 ```
 
-Con `mode: 'blur'` (predeterminado), el primer mensaje aparece al salir del campo o enviar el formulario. Tras mostrarse, se actualiza mientras el usuario corrige. `submit` espera al envío inicial; `input` valida desde la primera pulsación. El adaptador añade `aria-invalid`, conserva y amplía `aria-describedby`, anuncia mensajes de texto y ofrece botones para aceptar o descartar una sugerencia. No reemplaza el valor sin clic explícito. La limpieza elimina listeners y restaura los atributos anteriores. En un formulario invalido, evita su envío mediante `preventDefault` sin detener otros listeners.
+Con `mode: 'blur'` (predeterminado), el primer mensaje aparece al salir del campo o enviar el formulario. Tras mostrarse, se actualiza mientras el usuario corrige. `submit` espera al envío inicial; `input` valida desde la primera pulsación. El adaptador añade `aria-invalid`, conserva y amplía `aria-describedby`, anuncia mensajes de texto y ofrece botones para aceptar o descartar una sugerencia. No reemplaza el valor sin clic explícito. Al aceptar, emite un evento `input` burbujeante para que el formulario observe el valor final. La limpieza elimina listeners y restaura los atributos anteriores. En un formulario inválido, evita su envío mediante `preventDefault` sin detener otros listeners.
 
 El build ESM está en `dist/`; `dist/mailtor.browser.js` expone `window.Mailtor` para un `<script>` directo. Los subpaths permiten importar solo validación, sugerencias o adaptador. `sideEffects: false` habilita tree shaking con bundlers que lo respeten.
 

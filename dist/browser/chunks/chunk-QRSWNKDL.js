@@ -61,6 +61,7 @@ function validateEmail(email, options = {}) {
 
 // src/suggest.ts
 var DEFAULT_DOMAINS = ["gmail.com", "googlemail.com", "hotmail.com", "outlook.com", "yahoo.com", "icloud.com", "live.com", "aol.com", "proton.me"];
+var DEFAULT_PROTECTED_DOMAINS = [...DEFAULT_DOMAINS, "mail.com"];
 function distance(a, b, limit) {
   if (Math.abs(a.length - b.length) > limit) return limit + 1;
   const rows = Array.from({ length: a.length + 1 }, () => []);
@@ -82,25 +83,34 @@ function suggestEmail(email, options = {}) {
   const validation = validateEmail(email, options);
   if (!validation.valid || !validation.local || !validation.domain) return null;
   const original = validation.domain.toLowerCase();
+  if (DEFAULT_PROTECTED_DOMAINS.includes(original) || (options.protectedDomains ?? []).slice(0, 500).some((domain) => typeof domain === "string" && domain.toLowerCase() === original) || (options.domains ?? []).slice(0, 500).some((domain) => typeof domain === "string" && domain.toLowerCase() === original)) return null;
+  const mapped = options.corrections?.[original];
+  if (typeof mapped === "string") {
+    const target = mapped.toLowerCase();
+    if (target !== original && validateEmail("x@" + target, options).valid) {
+      return { address: validation.local + "@" + target, domain: target, originalDomain: validation.domain };
+    }
+  }
+  if (original.split(".")[0].length < 4) return null;
   const domains = options.domains ?? DEFAULT_DOMAINS;
   const limit = options.maxDistance ?? 2;
-  let best = limit + 1;
   let winner = null;
-  let ambiguous = false;
+  const seen = /* @__PURE__ */ new Set();
   for (const raw of domains.slice(0, 500)) {
     if (typeof raw !== "string" || raw.length > 253) continue;
     const candidate = raw.toLowerCase();
     if (!validateEmail("x@" + candidate, options).valid) continue;
     if (candidate === original) return null;
+    if (seen.has(candidate)) continue;
+    seen.add(candidate);
     if (candidate.split(".").at(-1) !== original.split(".").at(-1)) continue;
     const d = distance(original, candidate, limit);
-    if (d < best) {
-      best = d;
+    if (d <= limit) {
+      if (winner) return null;
       winner = candidate;
-      ambiguous = false;
-    } else if (d === best && candidate !== winner) ambiguous = true;
+    }
   }
-  if (!winner || best > limit || ambiguous) return null;
+  if (!winner) return null;
   return { address: validation.local + "@" + winner, domain: winner, originalDomain: validation.domain };
 }
 
@@ -113,6 +123,7 @@ function analyzeEmail(email, options = {}) {
 export {
   validateEmail,
   DEFAULT_DOMAINS,
+  DEFAULT_PROTECTED_DOMAINS,
   suggestEmail,
   analyzeEmail
 };

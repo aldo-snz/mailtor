@@ -7,21 +7,32 @@ const form = $<HTMLFormElement>('email-form');
 const mode = $<HTMLSelectElement>('mode');
 const validateNow = $<HTMLButtonElement>('validate-now');
 const domains = $<HTMLTextAreaElement>('domains');
+const protectedDomains = $<HTMLTextAreaElement>('protected-domains');
+const corrections = $<HTMLTextAreaElement>('corrections');
 const distance = $<HTMLSelectElement>('distance');
 const unicode = $<HTMLInputElement>('unicode');
 const tld = $<HTMLInputElement>('tld');
 const json = $<HTMLElement>('json');
 const code = $<HTMLElement>('code');
 let clean = () => {};
-function options(): InlineOptions { return {mode:mode.value as InlineOptions['mode'],domains:domains.value.split(/\r?\n/).map(s=>s.trim()).filter(Boolean),maxDistance:Number(distance.value) as 1|2,allowUnicodeDomain:unicode.checked,requireTld:tld.checked}; }
+function lines(value: string): string[] { return value.split(/\r?\n/).map(s=>s.trim()).filter(Boolean); }
+function mappings(value: string): Record<string,string> {
+  const result: Record<string,string> = Object.create(null);
+  for (const line of lines(value).slice(0,500)) {
+    const index = line.indexOf('=');
+    if (index > 0) result[line.slice(0,index).trim().toLowerCase()] = line.slice(index+1).trim().toLowerCase();
+  }
+  return result;
+}
+function options(): InlineOptions { return {mode:mode.value as InlineOptions['mode'],domains:lines(domains.value),protectedDomains:lines(protectedDomains.value),corrections:mappings(corrections.value),maxDistance:Number(distance.value) as 1|2,allowUnicodeDomain:unicode.checked,requireTld:tld.checked}; }
 function showResult() {json.textContent = JSON.stringify(analyzeEmail(email.value, options()),null,2);}
 function updateCode() {
   const o = options();
-  code.textContent = `import { attachEmailValidation } from 'mailtor/inline';\n\nconst cleanup = attachEmailValidation(\n  document.querySelector('#email'),\n  ${JSON.stringify({mode:o.mode,domains:o.domains,maxDistance:o.maxDistance,allowUnicodeDomain:o.allowUnicodeDomain,requireTld:o.requireTld},null,2)}\n);\n\n// Al desmontar el componente: cleanup();`;
+  code.textContent = `import { attachEmailValidation } from 'mailtor/inline';\n\nconst cleanup = attachEmailValidation(\n  document.querySelector('#email'),\n  ${JSON.stringify({mode:o.mode,domains:o.domains,protectedDomains:o.protectedDomains,corrections:o.corrections,maxDistance:o.maxDistance,allowUnicodeDomain:o.allowUnicodeDomain,requireTld:o.requireTld},null,2)}\n);\n\n// Al desmontar el componente: cleanup();`;
 }
 function attach() {clean(); clean = attachEmailValidation(email,{...options(),onResult:showResult}); validateNow.hidden = mode.value === 'input'; updateCode(); showResult();}
-for (const element of [mode,domains,distance,unicode,tld]) element.addEventListener('change',attach);
-domains.addEventListener('input',attach);
+for (const element of [mode,domains,protectedDomains,corrections,distance,unicode,tld]) element.addEventListener('change',attach);
+for (const element of [domains,protectedDomains,corrections]) element.addEventListener('input',attach);
 email.addEventListener('input',showResult);
 form.addEventListener('submit',e=>e.preventDefault());
 for (const button of document.querySelectorAll<HTMLButtonElement>('[data-example]')) button.addEventListener('click',()=>{email.value=button.dataset.example ?? '';email.dispatchEvent(new Event('input',{bubbles:true}));email.focus();});

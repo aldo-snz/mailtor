@@ -63,7 +63,14 @@ export function attachEmailValidation(input: HTMLInputElement, options: InlineOp
     render(true);
     if (input.getAttribute('aria-invalid') === 'true') event.preventDefault();
   }
-  function onAccept() { if (!candidate) return; input.value = candidate; dismissedFor = ''; render(true); input.focus(); }
+  function onAccept() {
+    if (!candidate) return;
+    const setter = Object.getOwnPropertyDescriptor(HTMLInputElement.prototype, 'value')?.set;
+    if (setter) setter.call(input, candidate); else input.value = candidate;
+    dismissedFor = '';
+    input.dispatchEvent(new Event('input', {bubbles: true}));
+    input.focus();
+  }
   function onDismiss() { dismissedFor = input.value; suggestion.hidden = true; status.textContent = ''; input.focus(); }
   input.addEventListener('input', onInput);
   input.addEventListener('blur', onBlur);

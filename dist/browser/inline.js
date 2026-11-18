@@ -1,6 +1,6 @@
 import {
   analyzeEmail
-} from "./chunks/chunk-FK3DFLN4.js";
+} from "./chunks/chunk-QRSWNKDL.js";
 
 // src/inline.ts
 var labels = {
@@ -75,9 +75,11 @@ function attachEmailValidation(input, options = {}) {
   }
   function onAccept() {
     if (!candidate) return;
-    input.value = candidate;
+    const setter = Object.getOwnPropertyDescriptor(HTMLInputElement.prototype, "value")?.set;
+    if (setter) setter.call(input, candidate);
+    else input.value = candidate;
     dismissedFor = "";
-    render(true);
+    input.dispatchEvent(new Event("input", { bubbles: true }));
     input.focus();
   }
   function onDismiss() {

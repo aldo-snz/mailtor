@@ -1,5 +1,7 @@
 import { validateEmail } from './validate.js';
 export const DEFAULT_DOMAINS = ['gmail.com', 'googlemail.com', 'hotmail.com', 'outlook.com', 'yahoo.com', 'icloud.com', 'live.com', 'aol.com', 'proton.me'];
+// Exact matches are never corrected. This is a guardrail, not an email allowlist.
+export const DEFAULT_PROTECTED_DOMAINS = [...DEFAULT_DOMAINS, 'mail.com'];
 // Bounded Damerau-Levenshtein distance, including adjacent transpositions.
 function distance(a, b, limit) {
     if (Math.abs(a.length - b.length) > limit)
@@ -28,11 +30,26 @@ export function suggestEmail(email, options = {}) {
     if (!validation.valid || !validation.local || !validation.domain)
         return null;
     const original = validation.domain.toLowerCase();
+    // Very short names have too many unrelated neighbors for a useful fuzzy hint.
+    // Explicit corrections can still opt in to a reviewed short domain.
+    if (DEFAULT_PROTECTED_DOMAINS.includes(original) ||
+        (options.protectedDomains ?? []).slice(0, 500).some(domain => typeof domain === 'string' && domain.toLowerCase() === original) ||
+        (options.domains ?? []).slice(0, 500).some(domain => typeof domain === 'string' && domain.toLowerCase() === original))
+        return null;
+    // Explicit, reviewed mappings may cross a TLD boundary. Fuzzy matching may not.
+    const mapped = options.corrections?.[original];
+    if (typeof mapped === 'string') {
+        const target = mapped.toLowerCase();
+        if (target !== original && validateEmail('x@' + target, options).valid) {
+            return { address: validation.local + '@' + target, domain: target, originalDomain: validation.domain };
+        }
+    }
+    if (original.split('.')[0].length < 4)
+        return null;
     const domains = options.domains ?? DEFAULT_DOMAINS;
     const limit = options.maxDistance ?? 2;
-    let best = limit + 1;
     let winner = null;
-    let ambiguous = false;
+    const seen = new Set();
     // Configured lists are bounded to keep UI work predictable.
     for (const raw of domains.slice(0, 500)) {
         if (typeof raw !== 'string' || raw.length > 253)
@@ -42,19 +59,21 @@ export function suggestEmail(email, options = {}) {
             continue;
         if (candidate === original)
             return null;
+        if (seen.has(candidate))
+            continue;
+        seen.add(candidate);
         // A different TLD is too risky to correct, e.g. company.co vs company.com.
         if (candidate.split('.').at(-1) !== original.split('.').at(-1))
             continue;
         const d = distance(original, candidate, limit);
-        if (d < best) {
-            best = d;
+        if (d <= limit) {
+            // Multiple plausible destinations are ambiguous even if one is closer.
+            if (winner)
+                return null;
             winner = candidate;
-            ambiguous = false;
         }
-        else if (d === best && candidate !== winner)
-            ambiguous = true;
     }
-    if (!winner || best > limit || ambiguous)
+    if (!winner)
         return null;
     return { address: validation.local + '@' + winner, domain: winner, originalDomain: validation.domain };
 }

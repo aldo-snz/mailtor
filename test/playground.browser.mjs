@@ -29,3 +29,19 @@ test('modo enviar espera y descarte no cambia valor',async({page})=>{
  await page.getByRole('button',{name:'Descartar'}).click();
  await expect(input).toHaveValue('ana@gmial.com');
 });
+test('protección, regla exacta y aceptación emiten el email final',async({page})=>{
+ await page.goto('/playground/');
+ const input=page.getByLabel('Dirección de email');
+ await input.fill('ana@mail.com');
+ await expect(page.locator('#json')).toContainText('"suggestion": null');
+ await page.locator('#corrections').fill('gmail.co=gmail.com\nhmail.com=hotmail.com');
+ await input.fill('Ana+tag@gmail.co');
+ await expect(page.getByText('¿Quisiste escribir Ana+tag@gmail.com?')).toBeVisible();
+ await page.evaluate(()=>{window.acceptedInputEvents=[];document.querySelector('#email-form').addEventListener('input',e=>window.acceptedInputEvents.push(e.target.value));});
+ await page.getByRole('button',{name:'Usar sugerencia'}).click();
+ await expect(input).toHaveValue('Ana+tag@gmail.com');
+ expect(await page.evaluate(()=>window.acceptedInputEvents)).toEqual(['Ana+tag@gmail.com']);
+ await page.locator('#protected-domains').fill('hmail.com');
+ await input.fill('ana@hmail.com');
+ await expect(page.locator('#json')).toContainText('"suggestion": null');
+});

@@ -61,6 +61,7 @@ function validateEmail(email2, options2 = {}) {
 
 // src/suggest.ts
 var DEFAULT_DOMAINS = ["gmail.com", "googlemail.com", "hotmail.com", "outlook.com", "yahoo.com", "icloud.com", "live.com", "aol.com", "proton.me"];
+var DEFAULT_PROTECTED_DOMAINS = [...DEFAULT_DOMAINS, "mail.com"];
 function distance(a, b, limit) {
   if (Math.abs(a.length - b.length) > limit) return limit + 1;
   const rows = Array.from({ length: a.length + 1 }, () => []);
@@ -82,25 +83,34 @@ function suggestEmail(email2, options2 = {}) {
   const validation = validateEmail(email2, options2);
   if (!validation.valid || !validation.local || !validation.domain) return null;
   const original = validation.domain.toLowerCase();
+  if (DEFAULT_PROTECTED_DOMAINS.includes(original) || (options2.protectedDomains ?? []).slice(0, 500).some((domain) => typeof domain === "string" && domain.toLowerCase() === original) || (options2.domains ?? []).slice(0, 500).some((domain) => typeof domain === "string" && domain.toLowerCase() === original)) return null;
+  const mapped = options2.corrections?.[original];
+  if (typeof mapped === "string") {
+    const target = mapped.toLowerCase();
+    if (target !== original && validateEmail("x@" + target, options2).valid) {
+      return { address: validation.local + "@" + target, domain: target, originalDomain: validation.domain };
+    }
+  }
+  if (original.split(".")[0].length < 4) return null;
   const domains2 = options2.domains ?? DEFAULT_DOMAINS;
   const limit = options2.maxDistance ?? 2;
-  let best = limit + 1;
   let winner = null;
-  let ambiguous = false;
+  const seen = /* @__PURE__ */ new Set();
   for (const raw of domains2.slice(0, 500)) {
     if (typeof raw !== "string" || raw.length > 253) continue;
     const candidate = raw.toLowerCase();
     if (!validateEmail("x@" + candidate, options2).valid) continue;
     if (candidate === original) return null;
+    if (seen.has(candidate)) continue;
+    seen.add(candidate);
     if (candidate.split(".").at(-1) !== original.split(".").at(-1)) continue;
     const d = distance(original, candidate, limit);
-    if (d < best) {
-      best = d;
+    if (d <= limit) {
+      if (winner) return null;
       winner = candidate;
-      ambiguous = false;
-    } else if (d === best && candidate !== winner) ambiguous = true;
+    }
   }
-  if (!winner || best > limit || ambiguous) return null;
+  if (!winner) return null;
   return { address: validation.local + "@" + winner, domain: winner, originalDomain: validation.domain };
 }
 
@@ -183,9 +193,11 @@ function attachEmailValidation(input, options2 = {}) {
   }
   function onAccept() {
     if (!candidate) return;
-    input.value = candidate;
+    const setter = Object.getOwnPropertyDescriptor(HTMLInputElement.prototype, "value")?.set;
+    if (setter) setter.call(input, candidate);
+    else input.value = candidate;
     dismissedFor = "";
-    render(true);
+    input.dispatchEvent(new Event("input", { bubbles: true }));
     input.focus();
   }
   function onDismiss() {
@@ -220,6 +232,8 @@ var form = $("email-form");
 var mode = $("mode");
 var validateNow = $("validate-now");
 var domains = $("domains");
+var protectedDomains = $("protected-domains");
+var corrections = $("corrections");
 var distance2 = $("distance");
 var unicode = $("unicode");
 var tld = $("tld");
@@ -227,8 +241,19 @@ var json = $("json");
 var code = $("code");
 var clean = () => {
 };
+function lines(value) {
+  return value.split(/\r?\n/).map((s) => s.trim()).filter(Boolean);
+}
+function mappings(value) {
+  const result = /* @__PURE__ */ Object.create(null);
+  for (const line of lines(value).slice(0, 500)) {
+    const index = line.indexOf("=");
+    if (index > 0) result[line.slice(0, index).trim().toLowerCase()] = line.slice(index + 1).trim().toLowerCase();
+  }
+  return result;
+}
 function options() {
-  return { mode: mode.value, domains: domains.value.split(/\r?\n/).map((s) => s.trim()).filter(Boolean), maxDistance: Number(distance2.value), allowUnicodeDomain: unicode.checked, requireTld: tld.checked };
+  return { mode: mode.value, domains: lines(domains.value), protectedDomains: lines(protectedDomains.value), corrections: mappings(corrections.value), maxDistance: Number(distance2.value), allowUnicodeDomain: unicode.checked, requireTld: tld.checked };
 }
 function showResult() {
   json.textContent = JSON.stringify(analyzeEmail(email.value, options()), null, 2);
@@ -239,7 +264,7 @@ function updateCode() {
 
 const cleanup = attachEmailValidation(
   document.querySelector('#email'),
-  ${JSON.stringify({ mode: o.mode, domains: o.domains, maxDistance: o.maxDistance, allowUnicodeDomain: o.allowUnicodeDomain, requireTld: o.requireTld }, null, 2)}
+  ${JSON.stringify({ mode: o.mode, domains: o.domains, protectedDomains: o.protectedDomains, corrections: o.corrections, maxDistance: o.maxDistance, allowUnicodeDomain: o.allowUnicodeDomain, requireTld: o.requireTld }, null, 2)}
 );
 
 // Al desmontar el componente: cleanup();`;
@@ -251,8 +276,8 @@ function attach() {
   updateCode();
   showResult();
 }
-for (const element of [mode, domains, distance2, unicode, tld]) element.addEventListener("change", attach);
-domains.addEventListener("input", attach);
+for (const element of [mode, domains, protectedDomains, corrections, distance2, unicode, tld]) element.addEventListener("change", attach);
+for (const element of [domains, protectedDomains, corrections]) element.addEventListener("input", attach);
 email.addEventListener("input", showResult);
 form.addEventListener("submit", (e) => e.preventDefault());
 for (const button of document.querySelectorAll("[data-example]")) button.addEventListener("click", () => {
