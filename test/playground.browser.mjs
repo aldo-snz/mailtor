@@ -1,7 +1,7 @@
 import {test, expect} from '@playwright/test';
 test('inline, sugerencia explícita, JSON y tabla',async({page})=>{
  await page.goto('/playground/');
- await expect(page.getByRole('heading',{name:'Probá un email',level:1})).toBeVisible();
+ await expect(page.getByRole('heading',{name:'MailTor Playground',level:1})).toBeVisible();
  await expect(page.getByText('Emails claros, sin falsas promesas.')).toHaveCount(0);
  const input=page.getByLabel('Dirección de email');
  await expect(page.locator('#mode')).toHaveValue('input');
