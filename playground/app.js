@@ -218,6 +218,7 @@ var $ = (id) => document.getElementById(id);
 var email = $("email");
 var form = $("email-form");
 var mode = $("mode");
+var validateNow = $("validate-now");
 var domains = $("domains");
 var distance2 = $("distance");
 var unicode = $("unicode");
@@ -246,6 +247,7 @@ const cleanup = attachEmailValidation(
 function attach() {
   clean();
   clean = attachEmailValidation(email, { ...options(), onResult: showResult });
+  validateNow.hidden = mode.value === "input";
   updateCode();
   showResult();
 }

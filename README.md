@@ -6,7 +6,7 @@ Librería ligera de validación sintáctica y sugerencia **opcional** de dominio
 
 ## Playground web
 
-Abrí **[Mailtor Playground](https://aldo-snz.github.io/mailtor/)**. Se publica desde `playground/` mediante GitHub Actions al actualizar el código del sitio en `main`. No requiere cuenta ni envía el email ingresado a un servidor.
+Abrí **[Mailtor Playground](https://aldo-snz.github.io/mailtor/)**. Se publica desde `playground/` mediante GitHub Actions al actualizar el código del sitio en `main`. Valida mientras escribís de forma predeterminada; también permite probar los modos al salir del campo y al enviar. No requiere cuenta ni envía el email ingresado a un servidor.
 
 ## Instalación local
 

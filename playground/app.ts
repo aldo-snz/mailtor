@@ -5,6 +5,7 @@ const $ = <T extends HTMLElement>(id: string) => document.getElementById(id) as 
 const email = $<HTMLInputElement>('email');
 const form = $<HTMLFormElement>('email-form');
 const mode = $<HTMLSelectElement>('mode');
+const validateNow = $<HTMLButtonElement>('validate-now');
 const domains = $<HTMLTextAreaElement>('domains');
 const distance = $<HTMLSelectElement>('distance');
 const unicode = $<HTMLInputElement>('unicode');
@@ -18,7 +19,7 @@ function updateCode() {
   const o = options();
   code.textContent = `import { attachEmailValidation } from 'mailtor/inline';\n\nconst cleanup = attachEmailValidation(\n  document.querySelector('#email'),\n  ${JSON.stringify({mode:o.mode,domains:o.domains,maxDistance:o.maxDistance,allowUnicodeDomain:o.allowUnicodeDomain,requireTld:o.requireTld},null,2)}\n);\n\n// Al desmontar el componente: cleanup();`;
 }
-function attach() {clean(); clean = attachEmailValidation(email,{...options(),onResult:showResult}); updateCode(); showResult();}
+function attach() {clean(); clean = attachEmailValidation(email,{...options(),onResult:showResult}); validateNow.hidden = mode.value === 'input'; updateCode(); showResult();}
 for (const element of [mode,domains,distance,unicode,tld]) element.addEventListener('change',attach);
 domains.addEventListener('input',attach);
 email.addEventListener('input',showResult);
